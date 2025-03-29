@@ -1,0 +1,48 @@
+services:
+  app:
+    image: php:7.4-apache
+    container_name: laravel52_app
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      - mysql
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html/public
+    command: >
+      sh -c "apt update &&
+             apt install -y unzip zip libzip-dev &&
+             docker-php-ext-install pdo pdo_mysql &&
+             sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf &&
+             apache2-foreground"
+
+
+  mysql:
+    image: mysql:5.7
+    container_name: laravel52_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+
+  composer:
+    image: php:7.4-cli
+    container_name: laravel52_composer
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      sh -c "apt update &&
+             apt install -y unzip git curl zip &&
+             curl -sS https://getcomposer.org/installer | php &&
+             php composer.phar create-project --no-plugins --no-scripts laravel/laravel:5.2.* /tmp/laravel &&
+             cp -r /tmp/laravel/. ."
+
+
+
